@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+import cors from 'cors';
 
 
 interface ApiResponse {
@@ -58,6 +59,8 @@ const app = express()
 const port = process.env.port || 3000;
 const contentDir = path.join(__dirname, 'content');
 app.use(bodyParser.json());
+app.use(cors()); // Enable CORS for all origins
+app.use(express.json());
 
 
 // Ensure the content directory exists
@@ -102,6 +105,8 @@ app.post('/create-email', async (req: Request, res: Response) => {
   const id = generateId();
   const email = { id, subject, content, recipient, sender_email_address };
   const filePath = path.join(contentDir, `${id}.json`);
+  console.log("email being created",email);
+  console.log("filePath: ",filePath);
 
   try {
     await fs.writeJson(filePath, email);
@@ -125,7 +130,6 @@ app.delete('/delete-email', async (req: Request, res: Response) => {
     for (const file of files) {
       const filePath = path.join(contentDir, file);
       const email = await fs.readJson(filePath);
-
       if (email.id === id || email.subject === subject) {
         await fs.remove(filePath);
         return res.status(200).send(`Email with ${id ? `ID ${id}` : `subject ${subject}`} deleted successfully`);

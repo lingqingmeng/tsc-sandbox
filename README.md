@@ -278,6 +278,89 @@ By using `as JokeResponse`, you tell TypeScript that you expect the response to 
 
 See: https://www.notion.so/lucia-protocol/Reference-Document-23fec4f381c048c8885f78f7c63e7301?pvs=4
 
+
+## Gotchas
+
+A common mistake is forgetting CORS when you are trying to test things out locally 
+
+```js
+// server.js or app.js
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+app.use(cors()); // Enable CORS for all origins
+app.use(express.json());
+
+// Your routes here
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+```
+
+By default, cors() allows requests from all origins. You can also configure it to restrict allowed origins.
+
+If modifying the backend is not an option, you can use a proxy to bypass CORS issues during development. Vite supports configuring a proxy to forward requests to your backend.
+
+1. Open vite.config.ts or vite.config.js in your project root.
+2. Add a proxy configuration to forward requests to your backend:
+
+
+```js
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
+});
+
+```
+
+then update to use the API prefix
+
+```js
+// CreateEmail.tsx
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch('/api/create-email', { // Updated URL
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        subject,
+        content,
+        recipient,
+        sender_email_address: senderEmailAddress,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error creating email');
+    }
+
+    const data = await response.text();
+    alert(data);
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+```
+
 ### Conclusion
 
 - **`axios`**: Uses generics to provide strong typing and a better developer experience with TypeScript out of the box.
